@@ -20,15 +20,6 @@ namespace :bot do
       }
     end
 
-    class Article
-      include Virtus.model
-      attribute :message, Telegram::Bot::Types::Message #should be array
-      attribute :type, String, default: 'hot'
-      attribute :chat_id
-    end
-
-
-
     TOKEN = '747809885:AAEaA7MNnO2B_VdKqVVsVcuLq67DJESX7Lg'
     BUTTONS = ["Срочная новость", "Комментарий", "Статья", "Посмотреть сообщения"]
     BUTTONS_FROM_HUMAN = {"Срочная новость" => 'hot', "Комментарий" => 'comment', "Статья" => 'article', "Посмотреть сообщения" => 'showall'}
@@ -46,19 +37,17 @@ namespace :bot do
           # Here you can handle your callbacks from inline buttons
           message = query.message
           chat_id = message.chat.id
-          articles[chat_id] ||= Article.new(chat_id: chat_id)
           if %w(hot comment article).include?(query.data)
-            articles[chat_id].type = query.data
+            articles[chat_id] = query.data
             bot.api.send_message(chat_id: chat_id, text: "Тип сообщения установлен.")
           elsif query.data == 'showall'
-            unless articles[chat_id].message.nil?
-              bot.api.send_message(chat_id: chat_id, text: articles[chat_id].message.text) 
+            Article.where(chat_id: chat_id).each do |article|
+              bot.api.send_message(chat_id: chat_id, text: article.text) 
             end
           end
         when Telegram::Bot::Types::Message
           message = query
           chat_id = message.chat.id
-          articles[chat_id] ||= Article.new(chat_id: chat_id) ##
           if message.text == '/start'
             question = 'Выберите тип сообщения или отправьте сообщение.'
             kb = [
@@ -78,15 +67,15 @@ namespace :bot do
             bot.api.send_message(chat_id: chat_id, text: "Выберите тип сообщения или отправьте сообщение.")
           elsif BUTTONS.include?(message.text)
             if BUTTONS[0..2].include?(message.text)
-              articles[chat_id].type = BUTTONS_FROM_HUMAN[message.text]
+              articles[chat_id] = BUTTONS_FROM_HUMAN[message.text]
               bot.api.send_message(chat_id: chat_id, text: "Тип сообщения установлен.")
             else #showall
-              unless articles[message.chat.id].message.nil?
-                bot.api.send_message(chat_id: chat_id, text: articles[chat_id].message.text) 
+              Article.where(chat_id: chat_id).each do |article|
+                bot.api.send_message(chat_id: chat_id, text: article.text) 
               end
             end
           else
-            articles[chat_id].message = message
+            Article.create(type: articles[chat_id], chat_id: chat_id, message: message)
             bot.api.send_message(chat_id: chat_id, text: "Сообщение сохранено") 
           end
         # when Telegram::Bot::Types::InlineQuery
