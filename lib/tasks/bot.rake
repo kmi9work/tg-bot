@@ -23,6 +23,7 @@ namespace :bot do
     TOKEN = '747809885:AAEaA7MNnO2B_VdKqVVsVcuLq67DJESX7Lg'
     BUTTONS = ["Срочная новость", "Комментарий", "Статья", "Посмотреть сообщения"]
     BUTTONS_FROM_HUMAN = {"Срочная новость" => 'hot', "Комментарий" => 'comment', "Статья" => 'article', "Посмотреть сообщения" => 'showall'}
+    BUTTONS_TO_HUMAN = {'hot' => "Срочная новость", 'comment' => "Комментарий", 'article' => "Статья", 'showall' => "Посмотреть сообщения"}
 
     def showall article
 
@@ -38,27 +39,25 @@ namespace :bot do
           message = query.message
           chat_id = message.chat.id
           if %w(hot comment article).include?(query.data)
-            articles[chat_id] = query.data
-            bot.api.send_message(chat_id: chat_id, text: "Тип сообщения установлен.")
-          elsif query.data == 'showall'
-            Article.where(chat_id: chat_id).each do |article|
-              bot.api.send_message(chat_id: chat_id, text: article.text) 
+            article = Article.find_by_message_id(message.reply_to_message.message_id)
+            if article
+              article.article_type = query.data
+              article.save
+              bot.api.send_message(chat_id: chat_id, text: "Тип сообщения установлен.")
+            else
+              bot.api.send_message(chat_id: chat_id, text: "Ошибонька.")
             end
+          elsif query.data == 'delete'
+            article = Article.find_by_message_id(message.reply_to_message.message_id)
+            article.destroy if article
+            count = Article.where(chat_id: chat_id).count
+            bot.api.send_message(chat_id: chat_id, text: "Удалено. В копилке: #{count}.")
           end
         when Telegram::Bot::Types::Message
           message = query
           chat_id = message.chat.id
           if message.text == '/start'
             question = 'Выберите тип сообщения или отправьте сообщение.'
-            kb = [
-              Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Срочная новость', callback_data: 'hot', resize_keyboard: true, one_time_keyboard: true),
-              Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Комментарий', callback_data: 'comment', resize_keyboard: true, one_time_keyboard: true),
-              Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Статья', callback_data: 'article', resize_keyboard: true, one_time_keyboard: true),
-              Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Посмотреть сообщения', callback_data: 'showall', resize_keyboard: true, one_time_keyboard: true)
-            ]
-            markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: kb)
-            bot.api.send_message(chat_id: chat_id, text: question, reply_markup: markup)
-            # See more: https://core.telegram.org/bots/api#replykeyboardmarkup
             answers =
               Telegram::Bot::Types::ReplyKeyboardMarkup
               .new(keyboard: BUTTONS, one_time_keyboard: true, resize_keyboard: true)
@@ -70,27 +69,33 @@ namespace :bot do
               articles[chat_id] = BUTTONS_FROM_HUMAN[message.text]
               bot.api.send_message(chat_id: chat_id, text: "Тип сообщения установлен.")
             else #showall
+              no_articles = true
               Article.where(chat_id: chat_id).each do |article|
-                bot.api.send_message(chat_id: chat_id, text: article.text) 
+                no_articles = false
+                if article.article_type.present?
+                  kb = [
+                    Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Удалить', callback_data: 'delete', resize_keyboard: true, one_time_keyboard: true)
+                  ]
+                  markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: kb)
+                  bot.api.send_message(chat_id: chat_id, text: article.message + "\n\nТип: #{BUTTONS_TO_HUMAN[article.article_type]}", reply_markup: markup, reply_to_message_id: article.message_id) 
+                else
+                  kb = [
+                    Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Срочная новость', callback_data: 'hot', resize_keyboard: true, one_time_keyboard: true),
+                    Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Комментарий', callback_data: 'comment', resize_keyboard: true, one_time_keyboard: true),
+                    Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Статья', callback_data: 'article', resize_keyboard: true, one_time_keyboard: true),
+                    Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Удалить', callback_data: 'delete', resize_keyboard: true, one_time_keyboard: true)
+                  ]
+                  markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: kb)
+                  bot.api.send_message(chat_id: chat_id, text: article.message, reply_markup: markup, reply_to_message_id: article.message_id) 
+                end
               end
+              bot.api.send_message(chat_id: chat_id, text: "Нет сообщений") if no_articles
             end
           else
-            Article.create(type: articles[chat_id], chat_id: chat_id, message: message)
+            Article.create(article_type: articles[chat_id], chat_id: chat_id, message: message, message_id: message.message_id)
+            articles[chat_id] = nil
             bot.api.send_message(chat_id: chat_id, text: "Сообщение сохранено") 
           end
-        # when Telegram::Bot::Types::InlineQuery
-        #   results = [
-        #     [1, 'First article', 'Very interesting text goes here.'],
-        #     [2, 'Second article', 'Another interesting text here.']
-        #   ].map do |arr|
-        #     Telegram::Bot::Types::InlineQueryResultArticle.new(
-        #       id: arr[0],
-        #       title: arr[1],
-        #       input_message_content: Telegram::Bot::Types::InputTextMessageContent.new(message_text: arr[2])
-        #     )
-        #   end
-
-        #   bot.api.answer_inline_query(inline_query_id: message.id, results: results)
         end
         
       end
