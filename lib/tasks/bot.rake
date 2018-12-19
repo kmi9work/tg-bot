@@ -74,7 +74,7 @@ namespace :bot do
               no_articles = false
               if article.article_type.present?
                 
-                res = bot.api.send_message(chat_id: chat_id, text: article.message + "\n\nТип: #{BUTTONS_TO_HUMAN[article.article_type]}", reply_markup: only_delete)
+                res = bot.api.send_message(chat_id: chat_id, text: "#{article.message}\n\nТип: #{BUTTONS_TO_HUMAN[article.article_type]}", reply_markup: only_delete)
               else
                 res = bot.api.send_message(chat_id: chat_id, text: article.message, reply_markup: type_and_delete) 
               end
