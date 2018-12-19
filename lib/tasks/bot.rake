@@ -33,7 +33,7 @@ namespace :bot do
     kb = [
       Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Удалить', callback_data: 'delete', resize_keyboard: true, one_time_keyboard: true)
     ]
-    only_delete = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: kb)
+    @only_delete = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: kb)
 
     kb = [
       Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Срочная новость', callback_data: 'hot', resize_keyboard: true, one_time_keyboard: true),
@@ -41,7 +41,7 @@ namespace :bot do
       Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Статья', callback_data: 'article', resize_keyboard: true, one_time_keyboard: true),
       Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Удалить', callback_data: 'delete', resize_keyboard: true, one_time_keyboard: true)
     ]
-    type_and_delete = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: kb)
+    @type_and_delete = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: kb)
 
     def show_sender_all bot, query, message, chat_id
       question = 'Выберите тип сообщения или отправьте сообщение.'
@@ -74,9 +74,9 @@ namespace :bot do
               no_articles = false
               if article.article_type.present?
                 
-                res = bot.api.send_message(chat_id: chat_id, text: "#{article.message}\n\nТип: #{BUTTONS_TO_HUMAN[article.article_type]}", reply_markup: only_delete)
+                res = bot.api.send_message(chat_id: chat_id, text: "#{article.message}\n\nТип: #{BUTTONS_TO_HUMAN[article.article_type]}", reply_markup: @only_delete)
               else
-                res = bot.api.send_message(chat_id: chat_id, text: article.message, reply_markup: type_and_delete) 
+                res = bot.api.send_message(chat_id: chat_id, text: article.message, reply_markup: @type_and_delete) 
               end
               article.message_id = res['result']['message_id'].to_i
               article.save
