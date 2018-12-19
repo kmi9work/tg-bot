@@ -10,15 +10,15 @@ namespace :bot do
 
   task :run => :environment do
 
-    Telegram::Bot.configure do |config|
-      config.ssl_opts = { verify: false }
-      config.proxy_opts = {
-        uri:  "https://private.kilylabs.com:65506",
-        user: 'teleproxy9',
-        password: 'teleproxy9',
-        socks: true
-      }
-    end
+    # Telegram::Bot.configure do |config|
+    #   config.ssl_opts = { verify: false }
+    #   config.proxy_opts = {
+    #     uri:  "https://private.kilylabs.com:65506",
+    #     user: 'teleproxy9',
+    #     password: 'teleproxy9',
+    #     socks: true
+    #   }
+    # end
 
     TOKEN = '747809885:AAEaA7MNnO2B_VdKqVVsVcuLq67DJESX7Lg'
     BUTTONS = ["Срочная новость", "Комментарий", "Статья", "Посмотреть сообщения"]
