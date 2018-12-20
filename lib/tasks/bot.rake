@@ -151,7 +151,7 @@ namespace :bot do
         elsif message.text == 'Очистить'
           question = "Удалить все сообщения?"
           kb = [
-            Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Удалить', callback_data: 'delete_all', resize_keyboard: true, one_time_keyboard: true)
+            Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Удалить', callback_data: 'delete_all', resize_keyboard: true, one_time_keyboard: true),
             Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Отмена', callback_data: 'cancel', resize_keyboard: true, one_time_keyboard: true)
           ]
           markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: kb)
