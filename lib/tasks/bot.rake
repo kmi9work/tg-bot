@@ -28,7 +28,7 @@ namespace :bot do
     CHAT_TYPES = ['Отправлять сообщения', 'Получать сообщения']
     CHAT_TYPES_FROM_HUMAN = {'Отправлять сообщения' => 'send', 'Получать сообщения' => 'receive'}
 
-    BUTTONS_RECEIVE = ['Посмотреть', 'Очистить', 'Посмотреть статьи', 'Посмотреть комментарии', 'Посмотреть срочные', 'Сменить тип использования']
+    BUTTONS_RECEIVE = [['Посмотреть все', 'Очистить'], ['Посмотреть статьи', 'Посмотреть комментарии', 'Посмотреть срочные'], 'Сменить тип использования']
     
     kb = [
       Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Удалить', callback_data: 'delete', resize_keyboard: true, one_time_keyboard: true)
@@ -134,8 +134,8 @@ namespace :bot do
       when Telegram::Bot::Types::Message
         if message.text == '/start'
           show_receiver_all bot, query, message, chat_id
-        elsif ['Посмотреть', 'Посмотреть статьи', 'Посмотреть комментарии', 'Посмотреть срочные'].include? message.text
-          if message.text == 'Посмотреть'
+        elsif ['Посмотреть все', 'Посмотреть статьи', 'Посмотреть комментарии', 'Посмотреть срочные'].include? message.text
+          if message.text == 'Посмотреть все'
             return_messages = Article.all
           elsif message.text == 'Посмотреть статьи' 
             return_messages = Article.where(article_type: 'article')
