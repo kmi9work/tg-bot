@@ -84,6 +84,7 @@ namespace :bot do
           elsif message.text == 'Сменить тип использования'
             chat = Chat.find_by_chat_id chat_id
             chat.chat_type = 'receive'
+            chat.save
             show_receiver_all bot, query, message, chat_id
           end
         else
@@ -160,6 +161,11 @@ namespace :bot do
           ]
           markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: kb)
           bot.api.send_message(chat_id: chat_id, text: question, reply_markup: markup) 
+        elsif message.text == 'Сменить тип использования'
+          chat = Chat.find_by_chat_id chat_id
+          chat.chat_type = 'send'
+          chat.save
+          show_sender_all bot, query, message, chat_id
         end
       when Telegram::Bot::Types::CallbackQuery
         if query.data == 'delete_all'
