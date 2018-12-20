@@ -21,7 +21,7 @@ namespace :bot do
     # end
 
     TOKEN = '747809885:AAEaA7MNnO2B_VdKqVVsVcuLq67DJESX7Lg'
-    BUTTONS = ["Срочная новость", "Комментарий", "Статья", "Посмотреть сообщения", 'Сменить тип использования']
+    BUTTONS = [["Срочная новость", "Комментарий", "Статья"], "Посмотреть сообщения", 'Сменить тип использования']
     BUTTONS_FROM_HUMAN = {"Срочная новость" => 'hot', "Комментарий" => 'comment', "Статья" => 'article', "Посмотреть сообщения" => 'showall', 'Сменить тип использования' => 'change_type'}
     BUTTONS_TO_HUMAN = {'hot' => "Срочная новость", 'comment' => "Комментарий", 'article' => "Статья", 'showall' => "Посмотреть сообщения", 'change_type' => 'Сменить тип использования'}
 
@@ -58,8 +58,8 @@ namespace :bot do
           show_sender_all bot, query, message, chat_id
         elsif message.text == '/help'
           bot.api.send_message(chat_id: chat_id, text: "Выберите тип сообщения или отправьте сообщение.")
-        elsif BUTTONS.include?(message.text)
-          if BUTTONS[0..2].include?(message.text)
+        elsif BUTTONS.flatten.include?(message.text)
+          if BUTTONS.flatten[0..2].include?(message.text)
             article = Article.where(chat_id: chat_id).where('message is null').first
             if article.present?
               article.article_type = BUTTONS_FROM_HUMAN[message.text]
