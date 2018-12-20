@@ -82,6 +82,15 @@ namespace :bot do
             end
             bot.api.send_message(chat_id: chat_id, text: "Нет сообщений") if no_articles
           end
+        else
+          article = Article.where(chat_id: chat_id).where('message is null').first
+          if article.present?
+            article.update(message: message, message_id: message.message_id)
+            article.save
+          else
+            Article.create(chat_id: chat_id, message: message, message_id: message.message_id)
+          end
+          bot.api.send_message(chat_id: chat_id, text: "Сообщение сохранено") 
         end
       when Telegram::Bot::Types::CallbackQuery
         if %w(hot comment article).include?(query.data)
@@ -100,15 +109,6 @@ namespace :bot do
           bot.api.delete_message(chat_id: chat_id, message_id: message.message_id)
           bot.api.send_message(chat_id: chat_id, text: "Удалено. В копилке: #{count}.")
         end
-      else
-        article = Article.where(chat_id: chat_id).where('message is null').first
-        if article.present?
-          article.update(message: message, message_id: message.message_id)
-          article.save
-        else
-          Article.create(chat_id: chat_id, message: message, message_id: message.message_id)
-        end
-        bot.api.send_message(chat_id: chat_id, text: "Сообщение сохранено") 
       end
     end
 
