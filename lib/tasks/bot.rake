@@ -144,7 +144,9 @@ namespace :bot do
           elsif message.text == 'Посмотреть срочные'
             return_messages = Article.where(article_type: 'hot')
           end
+          no_articles = true
           return_messages.each do |article|
+            no_articles = false
             res = bot.api.send_message(
               chat_id: chat_id, 
               text: "#{article.message}\n\nТип: #{BUTTONS_TO_HUMAN[article.article_type] || 'Неизвестно'}", 
@@ -153,11 +155,12 @@ namespace :bot do
             article.message_id = res['result']['message_id'].to_i
             article.save
           end
+          bot.api.send_message(chat_id: chat_id, text: "Нет сообщений") if no_articles
         elsif message.text == 'Очистить'
           question = "Удалить все сообщения?"
           kb = [
             Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Удалить', callback_data: 'delete_all', resize_keyboard: true, one_time_keyboard: true),
-            Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Отмена', callback_data: 'cancel', resize_keyboard: true, one_time_keyboard: true)
+            Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Отмена', callback_data: 'cancel_delete', resize_keyboard: true, one_time_keyboard: true)
           ]
           markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: kb)
           bot.api.send_message(chat_id: chat_id, text: question, reply_markup: markup) 
