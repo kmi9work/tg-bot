@@ -28,7 +28,7 @@ namespace :bot do
     CHAT_TYPES = ['Отправлять сообщения', 'Получать сообщения']
     CHAT_TYPES_FROM_HUMAN = {'Отправлять сообщения' => 'send', 'Получать сообщения' => 'receive'}
 
-    BUTTONS_RECEIVE = ['Посмотреть', 'Очистить']
+    BUTTONS_RECEIVE = ['Посмотреть', 'Очистить', 'Посмотреть статьи', 'Посмотреть комментарии', 'Посмотреть срочные']
     
     kb = [
       Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Удалить', callback_data: 'delete', resize_keyboard: true, one_time_keyboard: true)
@@ -50,8 +50,8 @@ namespace :bot do
         .new(keyboard: BUTTONS, resize_keyboard: true)
       bot.api.send_message(chat_id: chat_id, text: question, reply_markup: answers)
     end
-
-    def send_worker bot, query, message, chat_id
+      
+    def send_handler bot, query, message, chat_id
       case query
       when Telegram::Bot::Types::Message
         if message.text == '/start'
@@ -73,7 +73,6 @@ namespace :bot do
             Article.where(chat_id: chat_id).each do |article|
               no_articles = false
               if article.article_type.present?
-                
                 res = bot.api.send_message(chat_id: chat_id, text: "#{article.message}\n\nТип: #{BUTTONS_TO_HUMAN[article.article_type]}", reply_markup: @only_delete)
               else
                 res = bot.api.send_message(chat_id: chat_id, text: article.message, reply_markup: @type_and_delete) 
@@ -125,10 +124,44 @@ namespace :bot do
       bot.api.send_message(chat_id: chat_id, text: question, reply_markup: answers)
     end
 
-    def receive_worker bot, query, message, chat_id
+    def receive_handler bot, query, message, chat_id
       case query
       when Telegram::Bot::Types::Message
         if message.text == '/start'
+          show_receiver_all bot, query, message, chat_id
+        elsif (BUTTONS_RECEIVE - 'Очистить').include? message.text
+          if message.text == 'Посмотреть'
+            return_messages = Article.all
+          elsif message.text == 'Посмотреть статьи' 
+            return_messages = Article.where(article_type: 'article')
+          elsif message.text == 'Посмотреть комментарии'
+            return_messages = Article.where(article_type: 'comment')
+          elsif message.text == 'Посмотреть срочные'
+            return_messages = Article.where(article_type: 'hot')
+          end
+          return_messages.each do |article|
+            res = bot.api.send_message(
+              chat_id: chat_id, 
+              text: "#{article.message}\n\nТип: #{BUTTONS_TO_HUMAN[article.article_type] || 'Неизвестно'}", 
+              reply_markup: @only_delete)
+
+            article.message_id = res['result']['message_id'].to_i
+            article.save
+          end
+        elsif message.text == 'Очистить'
+          question = "Удалить все сообщения?"
+          kb = [
+            Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Удалить', callback_data: 'delete_all', resize_keyboard: true, one_time_keyboard: true)
+            Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Отмена', callback_data: 'cancel', resize_keyboard: true, one_time_keyboard: true)
+          ]
+          markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: kb)
+          bot.api.send_message(chat_id: chat_id, text: question, reply_markup: markup) 
+        end
+      when Telegram::Bot::Types::CallbackQuery
+        if query.data == 'delete_all'
+          Article.all.delete_all
+          show_receiver_all bot, query, message, chat_id
+        elsif query.data == 'cancel_delete'
           show_receiver_all bot, query, message, chat_id
         end
       end
@@ -146,12 +179,11 @@ namespace :bot do
           chat_id = message.chat.id
         end
         chat = Chat.find_by_chat_id chat_id
-        if chat.present? and chat.chat_type.present?
+        if chat.present? and chat.chat_type.present? and ["send", "receive"].include? chat.chat_type
           if chat.chat_type == "send"
-            send_worker bot, query, message, chat_id
+            send_handler bot, query, message, chat_id
           elsif chat.chat_type == "receive"
-            receive_worker bot, query, message, chat_id
-          else
+            receive_handler bot, query, message, chat_id
           end
         else
           # Новый пользователь
@@ -161,16 +193,16 @@ namespace :bot do
               chat ||= Chat.new(chat_id: chat_id)
               chat.chat_type = CHAT_TYPES_FROM_HUMAN[message.text]
               chat.save
-              if chat.chat_type == 'reveive'
+              if chat.chat_type == 'receive'
                 show_receiver_all bot, query, message, chat_id
-              else
-
+              elsif chat.chat_type == 'send'
+                show_sender_all bot, query, message, chat_id
               end
             else
               question = "Отправлять или получать сообщения?"
               answers =
                 Telegram::Bot::Types::ReplyKeyboardMarkup
-                .new(keyboard: ['Отправлять сообщения', 'Получать сообщения'], one_time_keyboard: true, resize_keyboard: true)
+                .new(keyboard: CHAT_TYPES, one_time_keyboard: true, resize_keyboard: true)
               bot.api.send_message(chat_id: chat_id, text: question, reply_markup: answers)
             end
           end
