@@ -28,7 +28,7 @@ namespace :bot do
     CHAT_TYPES = ['Отправлять сообщения', 'Получать сообщения']
     CHAT_TYPES_FROM_HUMAN = {'Отправлять сообщения' => 'send', 'Получать сообщения' => 'receive'}
 
-    BUTTONS_RECEIVE = ['Посмотреть', 'Очистить', 'Посмотреть статьи', 'Посмотреть комментарии', 'Посмотреть срочные']
+    BUTTONS_RECEIVE = ['Посмотреть', 'Очистить', 'Посмотреть статьи', 'Посмотреть комментарии', 'Посмотреть срочные', 'Сменить тип использования']
     
     kb = [
       Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Удалить', callback_data: 'delete', resize_keyboard: true, one_time_keyboard: true)
