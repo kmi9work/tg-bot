@@ -21,9 +21,9 @@ namespace :bot do
     # end
 
     TOKEN = '747809885:AAEaA7MNnO2B_VdKqVVsVcuLq67DJESX7Lg'
-    BUTTONS = ["Срочная новость", "Комментарий", "Статья", "Посмотреть сообщения"]
-    BUTTONS_FROM_HUMAN = {"Срочная новость" => 'hot', "Комментарий" => 'comment', "Статья" => 'article', "Посмотреть сообщения" => 'showall'}
-    BUTTONS_TO_HUMAN = {'hot' => "Срочная новость", 'comment' => "Комментарий", 'article' => "Статья", 'showall' => "Посмотреть сообщения"}
+    BUTTONS = ["Срочная новость", "Комментарий", "Статья", "Посмотреть сообщения", 'Сменить тип использования']
+    BUTTONS_FROM_HUMAN = {"Срочная новость" => 'hot', "Комментарий" => 'comment', "Статья" => 'article', "Посмотреть сообщения" => 'showall', 'Сменить тип использования' => 'change_type'}
+    BUTTONS_TO_HUMAN = {'hot' => "Срочная новость", 'comment' => "Комментарий", 'article' => "Статья", 'showall' => "Посмотреть сообщения", 'change_type' => 'Сменить тип использования'}
 
     CHAT_TYPES = ['Отправлять сообщения', 'Получать сообщения']
     CHAT_TYPES_FROM_HUMAN = {'Отправлять сообщения' => 'send', 'Получать сообщения' => 'receive'}
@@ -68,7 +68,7 @@ namespace :bot do
               Article.create(chat_id: chat_id, article_type: BUTTONS_FROM_HUMAN[message.text])
             end
             bot.api.send_message(chat_id: chat_id, text: "Тип сообщения установлен.")
-          else #showall
+          elsif message.text == 'Посмотреть сообщения'
             no_articles = true
             Article.where(chat_id: chat_id).each do |article|
               no_articles = false
@@ -81,6 +81,10 @@ namespace :bot do
               article.save
             end
             bot.api.send_message(chat_id: chat_id, text: "Нет сообщений") if no_articles
+          elsif message.text == 'Сменить тип использования'
+            chat = Chat.find_by_chat_id chat_id
+            chat.chat_type = 'receive'
+            show_receiver_all bot, query, message, chat_id
           end
         else
           article = Article.where(chat_id: chat_id).where('message is null').first
