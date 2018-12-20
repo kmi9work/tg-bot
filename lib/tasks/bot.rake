@@ -134,7 +134,7 @@ namespace :bot do
       when Telegram::Bot::Types::Message
         if message.text == '/start'
           show_receiver_all bot, query, message, chat_id
-        elsif (BUTTONS_RECEIVE - 'Очистить').include? message.text
+        elsif (BUTTONS_RECEIVE - ['Очистить']).include? message.text
           if message.text == 'Посмотреть'
             return_messages = Article.all
           elsif message.text == 'Посмотреть статьи' 
