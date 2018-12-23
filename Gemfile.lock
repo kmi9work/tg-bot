@@ -8,6 +8,20 @@ GIT
       socksify
       virtus
 
+PATH
+  remote: lib/sugar_crm
+  specs:
+    sugarcrm (0.9.18)
+      activesupport (>= 2.3.10)
+      i18n
+      json
+
+PATH
+  remote: lib/suite_crm
+  specs:
+    suite_crm (0.1.0)
+      faraday (~> 0.15)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -191,6 +205,8 @@ DEPENDENCIES
   sdoc
   spring
   sqlite3
+  sugarcrm!
+  suite_crm!
   telegram-bot-ruby!
   turbolinks
   uglifier
@@ -200,4 +216,4 @@ RUBY VERSION
    ruby 2.4.4p296
 
 BUNDLED WITH
-   1.17.1
+   1.17.2

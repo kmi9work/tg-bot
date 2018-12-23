@@ -1,6 +1,9 @@
 source 'https://rubygems.org'
 ruby '>= 2.3.5', '< 2.6'
 
+gem 'suite_crm', path: 'lib/suite_crm'
+gem 'sugarcrm', path: 'lib/sugar_crm'
+
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 gem 'rails'
 # Use postgresql as the database for Active Record

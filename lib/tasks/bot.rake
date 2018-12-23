@@ -8,6 +8,30 @@ require 'telegram/bot'
 
 namespace :bot do
 
+  desc "Test"
+  task :test do
+    client = SuiteCrm::Client.new({endpoint: "https://crm.eot.su"})
+    client.login({username: 'mkostenchuk', password: 'V7iFCW'})
+    # puts client.get_available_modules.to_json
+    client.get_entry({module_name: 'Contacts', select_fields: ['last_name']})
+  end
+
+  desc "SugarCRM"
+  task :sugar do
+    SugarCRM.connect("https://crm.eot.su", 'mkostenchuk', 'V7iFCW')
+    SugarCRM.connection.debug = true
+    # p SugarCRM.current_user
+    # puts SugarCRM.modules
+    puts "========="
+    # puts SugarCRM::Module.find("Contacts")
+    # SugarCRM.connection.get_entry_list(
+    #   "estr_eot_structure",
+    #   "select_fields": ["name"]
+    # )
+
+    puts SugarCRM::EstrEotStructure.first{|a| puts a.name}
+  end
+
   task :run => :environment do
 
     # Telegram::Bot.configure do |config|
@@ -58,6 +82,8 @@ namespace :bot do
           show_sender_all bot, query, message, chat_id
         elsif message.text == '/help'
           bot.api.send_message(chat_id: chat_id, text: "Выберите тип сообщения или отправьте сообщение.")
+        elsif message.text == '/test'
+          bot.api.send_message(chat_id: '@SimachkovFelix', text: 'Привет! Это тест. Напиши Мише, если получил это сообщение.')
         elsif BUTTONS.flatten.include?(message.text)
           if BUTTONS.flatten[0..2].include?(message.text)
             article = Article.where(chat_id: chat_id).where('message is null').first
@@ -134,6 +160,8 @@ namespace :bot do
       when Telegram::Bot::Types::Message
         if message.text == '/start'
           show_receiver_all bot, query, message, chat_id
+        elsif message.text == '/test'
+          bot.api.send_message(chat_id: '@SimachkovFelix', text: 'Привет! Это тест. Напиши Мише, если получил это сообщение.')
         elsif ['Посмотреть все', 'Посмотреть статьи', 'Посмотреть комментарии', 'Посмотреть срочные'].include? message.text
           if message.text == 'Посмотреть все'
             return_messages = Article.all
