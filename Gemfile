@@ -4,6 +4,9 @@ source 'https://rubygems.org'
 # gem 'sugarcrm', path: 'lib/sugar_crm'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
+gem 'aasm'
+
+gem 'google-api-client'
 gem 'rails'
 # Use postgresql as the database for Active Record
 gem 'sqlite3'
@@ -32,7 +35,7 @@ gem 'spring',        group: :development
 # gem 'bcrypt', '~> 3.1.7'
 
 gem 'inflecto'
-gem 'telegram-bot-ruby', github: 'lenferer/telegram-bot-ruby'
+gem 'telegram-bot-ruby', path: 'lib/telegram-bot-ruby'
 gem 'virtus'
 
 gem 'puma'

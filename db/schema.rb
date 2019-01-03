@@ -10,10 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20181211084825) do
-
-  # These are extensions that must be enabled in order to support this database
-  enable_extension "plpgsql"
+ActiveRecord::Schema.define(version: 20190103144540) do
 
   create_table "articles", force: :cascade do |t|
     t.text "message"
@@ -27,6 +24,66 @@ ActiveRecord::Schema.define(version: 20181211084825) do
   create_table "chats", force: :cascade do |t|
     t.integer "chat_id"
     t.string "chat_type"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "aasm_state"
+  end
+
+  create_table "contact_chats", force: :cascade do |t|
+    t.string "state"
+    t.integer "chat_id"
+    t.string "chat_type"
+    t.integer "user_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "aasm_state"
+    t.index ["user_id"], name: "index_contact_chats_on_user_id"
+  end
+
+  create_table "contacts", force: :cascade do |t|
+    t.string "sku"
+    t.string "phone"
+    t.string "email"
+    t.string "name"
+    t.string "city"
+    t.string "region"
+    t.text "own_comment"
+    t.string "action"
+    t.date "system_date"
+    t.string "state"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "duties", force: :cascade do |t|
+    t.integer "team"
+    t.string "number"
+    t.string "leader"
+    t.date "day"
+    t.integer "start_hour"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "duties_users", id: false, force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.integer "duty_id", null: false
+  end
+
+  create_table "kv_chats", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "users", force: :cascade do |t|
+    t.boolean "authorized"
+    t.string "username"
+    t.string "city"
+    t.string "cell"
+    t.string "number"
+    t.text "jobs"
+    t.integer "team"
+    t.integer "timezone"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
