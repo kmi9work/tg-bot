@@ -35,7 +35,7 @@ gem 'spring',        group: :development
 # gem 'bcrypt', '~> 3.1.7'
 
 gem 'inflecto'
-gem 'telegram-bot-ruby', path: "#{Dir.getwd}/lib/telegram-bot-ruby"
+gem 'telegram-bot-ruby', path: "./lib/telegram-bot-ruby"
 gem 'virtus'
 
 gem 'puma'

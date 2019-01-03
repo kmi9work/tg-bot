@@ -1,0 +1,290 @@
+= SugarCRM
+
+* http://github.com/chicks/sugarcrm
+
+REST Bindings for SugarCRM!  
+
+== SUMMARY: 
+
+A less clunky way to interact with SugarCRM via REST. 
+
+== FEATURES/PROBLEMS:
+
+* Works with all v2 API calls
+* Supports Rails 2 and 3
+* ActiveRecord style finders and objects
+* Supports creation, saving, and deletion of SugarCRM specific objects
+* Flexible extension framework
+* Validations, typecasting, and serialization of boolean, date, and integer fields
+* Query, update and delete records from collections
+* Access API methods directly on the SugarCRM.connection object
+
+== SYNOPSIS:
+
+  require 'sugarcrm'
+  
+  # Establish a connection
+  SugarCRM.connect("http://localhost/sugarcrm", 'user', 'password')
+
+  # Enable debugging on the current connection
+  SugarCRM.connection.debug = true
+
+  # Reload the environment (will make the gem classes reflect changes made on SugarCRM server, such as adding fields)
+  SugarCRM.reload!
+
+  # Get the logged in user
+  SugarCRM.current_user
+
+  # Show a list of available modules
+  SugarCRM.modules
+
+  # Retrieve a User by user_name
+  users = SugarCRM::User.find_by_user_name("admin")
+  
+  # Return a User instance's SugarCRM URL (also works for any other module instance)
+  users.url
+  
+  # Update a User's title
+  u = SugarCRM::User.find_by_first_name_and_last_name("Will", "Westin")
+  u.title = "Sales Manager Central"
+  u.save
+  
+  # Check if an object is valid (i.e. if it has the required fields to save)
+  u.valid?
+    
+  # Access the errors collection
+  u.errors
+  
+  # Show the fields required to save
+  u.required_attributes
+  
+  # Delete an Account
+  a = SugarCRM::Account.find_by_name("JAB Funds Ltd.")
+  a.delete
+
+  # Retrieve all Email Addresses assigned to a particular User.
+  SugarCRM::User.find_by_user_name('sarah').email_addresses
+  
+  # Retrieve all Email Addresses on an Account
+  SugarCRM::Account.find_by_name("JAB Funds Ltd.").contacts.each do |contact|
+    contact.email_addresses.each do |email|
+      puts "#{email.email_address}" unless email.opt_out
+    end
+  end
+  
+  # Add a Meeting to a Contact
+  c = SugarCRM::Contact.first
+  c.meetings << SugarCRM::Meeting.new({
+    :name => "Product Introduction", 
+    :date_start => DateTime.now,
+    :duration_hours => 1
+  })
+  c.save!
+  
+  # Add a Contact to an Account
+  a = SugarCRM::Account.find_by_name("JAB Funds Ltd.")
+  c = SugarCRM::Contact.new
+  c.last_name = 'Doe'
+  a.contacts << c
+  a.save # or a.contacts.save
+  
+  # Check if an Account has a specific Contact associated with it
+  c = SugarCRM::Contact.find_by_last_name("Doe")
+  a = SugarCRM::Account.find_by_name("JAB Funds Ltd.")
+  a.contacts.include?(c)
+  
+  # Remove a Contact from an Account
+  c = SugarCRM::Contact.find_by_last_name("Doe")
+  a = SugarCRM::Account.find_by_name("JAB Funds Ltd.")
+  a.contacts.delete(c)
+  a.save # or a.contacts.save
+  
+  # Retrieve the number of accounts in CRM with 'Inc' in their name
+  SugarCRM::Account.count(:conditions => {:name => "LIKE '%Inc'"})
+  
+  # Look up the Case with the smallest case number
+  SugarCRM::Case.first({
+    :order_by => 'case_number'
+  })
+  
+  # Retrieve the first 10 Accounts with a zip code between 10000 and 10500
+  SugarCRM::Account.all({
+    :conditions => { :billing_address_postalcode => ["> '10000'", "<= '10500'" ] },
+    :limit => '10',
+    :order_by => 'billing_address_postalcode'
+  })
+  
+  # Retrieve all Accounts with a zip code
+  SugarCRM::Account.all({
+    :conditions => { :billing_address_postalcode => "<> NULL" }
+  })
+  
+  # Retrieve all Accounts with 'Fund' in their name
+  SugarCRM::Account.all({
+    :conditions => { :name => "LIKE '%Fund%'" } # note that SQL operators must be uppercase
+  })
+
+  # Use block to iterate over results: print all account names
+  SugarCRM::Account.all{|a| puts a.name } # note: this method will be much quicker than SugarCRM::Account.all.each{|a| puts a.name }
+                                          # because records are passed to the block as they get fetched from SugarCRM (whereas `each`
+                                          # will fetch all records, and only then pass them to the block). This will make a major difference
+                                          # in resource use and execution time if you're dealing with many records.
+
+  # Download a document from SugarCRM
+  account = SugarCRM::Account.first
+  doc = account.documents.first
+  result = SugarCRM.connection.get_document_revision(doc.document_revision_id)
+  File.open(result['document_revision']['filename'], 'w') do |f|
+    f.write(SugarCRM.connection.b64_decode(result['document_revision']['file']))
+  }
+
+  # Create a new document and add it to the account's documents
+  # (continued from above)
+  doc = SugarCRM::Document.new
+  doc.active_date = Date.today
+  doc.id = doc.save!
+  account.documents << doc
+  account.save!
+
+  # Create a new revision to add a file to the SugarCRM document instance
+  # (continued from above)
+  file = File.read(File.join(File.dirname(__FILE__),"test_excel.xls"))
+  revision_number = 1
+  SugarCRM.connection.set_document_revision(doc.id, revision_number, {
+    filename: "my_file.xls",
+    file: file
+  })
+  
+  # Look up the fields for a given module
+  SugarCRM::Module.find("Accounts").fields
+  
+  # Look up the relationships for a given module
+  SugarCRM::Module.find("Accounts").link_fields
+  
+  # Use the HTTP Connection and SugarCRM API to load the Admin user
+  SugarCRM.connection.get_entry("Users", 1)
+
+  # Retrieve all Accounts by user name (direct API method)
+  SugarCRM.connection.get_entry_list(
+    "Users",
+    "users.user_name = \'sarah\'",
+    {
+      :link_fields => [
+        {
+          "name"  => "accounts",
+          "value" => ["id", "name"]
+        }
+      ]          
+    } 
+  )
+
+== USING THE GEM WITH RAILS 3
+
+Note: this gem works with Active Support >= 2.3.10, but is optimized for Rails 3.
+
+1. Add the sugarcrm gem to your Gemfile (sugarcrm gem version >= 0.9.12)
+2. Run `bundle install`
+4. Run `rails g sugarcrm:config`
+5. Edit the configuration file in `config/sugarcrm.yml` to match your environment
+
+Example apps:
+* https://github.com/davidsulc/sugar_on_rails_basic
+* https://github.com/davidsulc/dev_zone_basic_rails_app
+
+== USING A CONFIGURATION FILE
+
+If you want to use a configuration file instead of always specifying the url, username, and password to connect to SugarCRM, you can add your credentials to one (or more) of
+
+* `/etc/sugarcrm.yaml`
+* `~/.sugarcrm.yaml` (i.e. your home directory on Linux and Mac OSX)
+* a `sugarcrm.yaml` file at the root of you Windows home directory (execute `ENV['USERPROFILE']` in Ruby to see which directory should contain the file)
+* `config/sugarcrm.yaml` (will need to be copied each time you upgrade or reinstall the gem)
+* a YAML file and call `SugarCRM.load_config` followed by the absolute path to your configuration file
+
+If there are several configuration files, they are loaded sequentially in the order above and will overwrite previous values (if present). This allows you to (e.g.) have a config file in `/etc/sugarcrm.yaml` with system-wide configuration information (such as the url where SugarCRM is located) and/or defaults. Each developer/user can then have his personal configuration file in `~/.sugarcrm.yaml` with his own username and password. A developer could also specify a different location for the SugarCRM instance (e.g. a local testing instance) in his configuration file, which will take precedence over the value in `/etc/sugarcrm.yaml`.
+
+Your configuration should be in YAML format:
+
+    config:
+      base_url: http://127.0.0.1/sugarcrm
+      username: admin
+      password: letmein
+
+An example, accompanied by instructions, can be found in the `config/sugarcrm.yaml` file. In addition, a working example used for testing can be found in `test/config_test.yaml`
+
+== USING THE GEM IN A CONSOLE
+
+1.  Type `irb` in your command prompt
+
+2.  Require the gem with `require 'sugarcrm'` (Note: Windows users might need to `require 'rubygems'` before `require 'sugarcrm'`.)
+
+3.  * if your login credentials are stored in the `config/sugarcrm.yaml` file, you have been automagically logged in already ;
+    * if your login credentials are stored in a different config file, just call `SugarCRM.load_config` followed by the absolute path to your config file. This will log you in automatically ;
+    * if you don't have a configuration file, you can still call the basic `SugarCRM.connect` and give it the proper arguments (see documentation above)
+
+4. You now have full access to the gem's functionality, e.g. `puts SugarCRM::Account.first.name`
+
+5. If you make changes on the SugarCRM server (e.g. adding a field to a module), you can call `SugarCRM.reload!` to rebuild the gem's modules and gain access to the new fields
+  
+== EXTENDING THE GEM
+
+If you want to extend the gem's capabilities (e.g. to add methods specific to your environment), you can either
+
+* drop your `*.rb` files in `lib/sugarcrm/extensions/` (see the README in that folder)
+
+* drop your `*.rb` files in any other folder and call `SugarCRM.extensions_folder = ` followed by the absolute path to the folder containing your extensions
+
+== WORKING WITH SIMULTANEOUS SESSIONS
+
+This gem allows you to work with several SugarCRM session simultaneously: on each `SugarCRM.connect` call, a namespace is returned. Make sure you do NOT store this namespace in a reserved name (such as SugarCRM). This namespace can then be used just like you would use the `SugarCRM` module. For example:
+
+    ServerOne = SugarCRM.connect(URL1,...)
+    ServerOne::User.first
+    ServerTwo = SugarCRM.connect(URL2,...)
+    ServerTwo::User.first
+
+If you have only one active session, calls to SugarCRM are delegated to the active session's namespace, like so
+
+    ServerOne = SugarCRM.connect(...)
+    ServerOne::User.first # this call does
+    SugarCRM::User.first # the exact same thing as this one
+
+To replace your session to connect with different credentials, use
+
+    ServerOne.reconnect(...)
+
+Then your session will be reused (SugarCRM modules will be reloaded).
+
+To disconnect an active session:
+
+    ServerOne.disconnect!
+
+== REQUIREMENTS:
+
+* activesupport >= 2.3.10
+* i18n
+* json
+
+== INSTALL:
+
+* sudo gem install sugarcrm
+
+Note: Windows users might need to `require 'rubygems'` before `require 'sugarcrm'`.
+
+== TEST:
+
+Put your credentials in a file called `test/config.yaml` (which you will have to create). These must point to a SugarCRM test instance with demo data. See an example file in `test/config_test.yaml` (leave that file as is).
+
+== Note on Patches/Pull Requests
+ 
+* Fork the project.
+* Make your feature addition or bug fix.
+* Add tests for it. This is important so I don't break it in a
+  future version unintentionally.
+* Commit, do not mess with rakefile, version, or history.
+  (if you want to have your own version, that is fine but bump version in a commit by itself I can ignore when I pull)
+* Send me a pull request. Bonus points for topic branches.
+
+== Copyright
+
+Copyright (c) 2011 Carl Hicks. See LICENSE for details.
