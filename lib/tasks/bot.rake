@@ -96,15 +96,15 @@ namespace :bot do
 
   task :contacts => :environment do
 
-    Telegram::Bot.configure do |config|
-      config.ssl_opts = { verify: false }
-      config.proxy_opts = {
-        uri:  "https://private.kilylabs.com:65506",
-        user: 'teleproxy9',
-        password: 'teleproxy9',
-        socks: true
-      }
-    end
+    # Telegram::Bot.configure do |config|
+    #   config.ssl_opts = { verify: false }
+    #   config.proxy_opts = {
+    #     uri:  "https://private.kilylabs.com:65506",
+    #     user: 'teleproxy9',
+    #     password: 'teleproxy9',
+    #     socks: true
+    #   }
+    # end
 
     BOTNAME = 'kv_contacts_bot'
     TOKEN = '762400042:AAE9RGE7A9Pyi-NTWY6eYij7-t0r0f0qN4E'
