@@ -24,11 +24,11 @@ class ContactChat < ApplicationRecord
     state :sleeping, initial: true #Не писал ни старт, ничего
     state :starting # Написал start
     event :start do 
-      transitions :from => :sleeping, :to => :starting 
+      transitions :to => :starting 
     end
     state :signing # Написал /signup - ждет авторизации
     event :sign do 
-      transitions :from => :starting, :to => :signing 
+      transitions :to => :signing 
     end
     state :authorized # Авторизован
     # event :authorize { transitions :to => :authorized }
