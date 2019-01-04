@@ -68,7 +68,7 @@ class ContactChat < ApplicationRecord
             user.authorized = false
           else
             user.authorized = true
-            ask_city_and_cell user.contact_chats.first.chat_id
+            send_authorized user.contact_chats.first.chat_id
           end
           user.save
           return
@@ -183,6 +183,11 @@ class ContactChat < ApplicationRecord
 
   private
 
+  def send_authorized chat_id
+    text = "Вы авторизованы. Напишите боту любое сообщение"
+    bot.api.send_message(chat_id: chat_id, text: text)
+  end
+
   def call_admin_signup
     text = "Просит авторизации: #{self.user.username}. Авторизовать?"
     kb = [
@@ -224,10 +229,10 @@ class ContactChat < ApplicationRecord
     res = bot.api.send_message(chat_id: chat_id, text: text)
   end
 
-  def ask_city_and_cell id = chat_id
+  def ask_city_and_cell
     unless self.user.try(:city)
       text = "Введите город (пока работает только для России. Если нужно зарубежье - пишите @mkosten)."
-      res = bot.api.send_message(chat_id: id, text: text)
+      res = bot.api.send_message(chat_id: chat_id, text: text)
       self.wait_city && self.save if res['ok']
     else
       if self.user.need_cell?
