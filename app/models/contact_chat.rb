@@ -59,7 +59,7 @@ class ContactChat < ApplicationRecord
   end
 
   def handle
-    if self.user.username == 'mkosten'
+    if self.user.try(:username) == 'mkosten'
       case @query
       when Telegram::Bot::Types::CallbackQuery
         if @query.data.match(/(do_not_)?authorize_(\d+)/)
@@ -165,7 +165,6 @@ class ContactChat < ApplicationRecord
           else
             send_choose_and_ready
           end
-
         elsif @query.data == 'no_notify'
           self.user.jobs.delete 'notify'
           send_choose_and_ready
