@@ -160,7 +160,12 @@ class ContactChat < ApplicationRecord
           send_choose_and_ready
         elsif @query.data == 'notify'
           self.user.jobs.push 'notify' if self.user.try(:authorized?)
-          send_ask_team unless self.user.team.present?
+          unless self.user.team.present?
+            send_ask_team
+          else
+            send_choose_and_ready
+          end
+
         elsif @query.data == 'no_notify'
           self.user.jobs.delete 'notify'
           send_choose_and_ready
