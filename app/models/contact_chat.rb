@@ -196,7 +196,9 @@ class ContactChat < ApplicationRecord
     ]
     markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: kb)
     user = User.find_by_username 'mkosten'
-    bot.api.send_message(chat_id: user.contact_chats.first.chat_id, text: text, reply_markup: markup) 
+    res = bot.api.send_message(chat_id: user.contact_chats.first.chat_id, text: text, reply_markup: markup)
+    self.user.authorized = false 
+    self.user.save
   end
 
   def send_ask_timezone
