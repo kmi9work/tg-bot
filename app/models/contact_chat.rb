@@ -59,6 +59,22 @@ class ContactChat < ApplicationRecord
   end
 
   def handle
+    if self.user.username == 'mkosten'
+      case @query
+      when Telegram::Bot::Types::CallbackQuery
+        if @query.data.match(/(do_not_)?authorize_(\d+)/)
+          user = User.find($2)
+          if $1.present?
+            user.authorized = false
+          else
+            user.authorized = true
+            ask_city_and_cell user.contact_chats.first.chat_id
+          end
+          user.save
+          return
+        end
+      end
+    end
     case self.aasm.current_state
     when :sleeping
       handle_first
@@ -74,6 +90,7 @@ class ContactChat < ApplicationRecord
           else
             send_wait
             self.sign && self.save
+            call_admin_signup unless self.user.authorized == false
             puts "signing"
           end
         else
@@ -162,13 +179,28 @@ class ContactChat < ApplicationRecord
 
   private
 
+  def call_admin_signup
+    text = "Просит авторизации: #{self.user.username}. Авторизовать?"
+    kb = [
+      Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Да', callback_data: "authorize_#{self.user.id}"),
+      Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Нет', callback_data: "do_not_authorize_#{self.user.id}")
+    ]
+    markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: kb)
+    user = User.find_by_username 'mkosten'
+    bot.api.send_message(chat_id: user.contact_chats.first.chat_id, text: text, reply_markup: markup) 
+  end
+
   def send_ask_timezone
-    text = "Выберите Вашу временную зону"
-    answers =
-      Telegram::Bot::Types::ReplyKeyboardMarkup
-      .new(keyboard: TIMEZONES, resize_keyboard: true, one_time_keyboard: true)
-    bot.api.send_message(chat_id: chat_id, text: text, reply_markup: answers)
-    self.wait_timezone and self.save
+    if self.user.timezone.blank?
+      text = "Выберите Вашу временную зону"
+      answers =
+        Telegram::Bot::Types::ReplyKeyboardMarkup
+        .new(keyboard: TIMEZONES, resize_keyboard: true, one_time_keyboard: true)
+      bot.api.send_message(chat_id: chat_id, text: text, reply_markup: answers)
+      self.wait_timezone and self.save
+    else
+      send_choose_and_ready
+    end
   end
 
   def send_ask_number
@@ -188,10 +220,10 @@ class ContactChat < ApplicationRecord
     res = bot.api.send_message(chat_id: chat_id, text: text)
   end
 
-  def ask_city_and_cell
+  def ask_city_and_cell id = chat_id
     unless self.user.try(:city)
       text = "Введите город (пока работает только для России. Если нужно зарубежье - пишите @mkosten)."
-      res = bot.api.send_message(chat_id: chat_id, text: text)
+      res = bot.api.send_message(chat_id: id, text: text)
       self.wait_city && self.save if res['ok']
     else
       if self.user.need_cell?
