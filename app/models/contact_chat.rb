@@ -23,23 +23,39 @@ class ContactChat < ApplicationRecord
   aasm do
     state :sleeping, initial: true #Не писал ни старт, ничего
     state :starting # Написал start
-    event :start { transitions :from => :sleeping, :to => :starting }
+    event :start do 
+      transitions :from => :sleeping, :to => :starting 
+    end
     state :signing # Написал /signup - ждет авторизации
-    event :sign { transitions :from => :starting, :to => :signing }
+    event :sign do 
+      transitions :from => :starting, :to => :signing 
+    end
     state :authorized # Авторизован
     # event :authorize { transitions :to => :authorized }
     state :waiting_city
-    event :wait_city { transitions :to => :waiting_city }
+    event :wait_city do 
+      transitions :to => :waiting_city
+    end
     state :waiting_cell
-    event :wait_cell { transitions :to => :waiting_cell }
+    event :wait_cell do 
+      transitions :to => :waiting_cell 
+    end
     state :ready
-    event :set_ready { transitions :to => :ready }
+    event :set_ready do 
+      transitions :to => :ready 
+    end
     state :waiting_team
-    event :wait_team { transitions :to => :waiting_team }
+    event :wait_team do 
+      transitions :to => :waiting_team 
+    end
     state :waiting_number
-    event :wait_number { transitions :to => :waiting_number }
+    event :wait_number do 
+      transitions :to => :waiting_number
+    end
     state :waiting_timezone
-    event :wait_timezone { transitions :to => :waiting_timezone }
+    event :wait_timezone do 
+      transitions :to => :waiting_timezone
+    end
   end
 
   def handle
